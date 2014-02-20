@@ -76,7 +76,6 @@ class Convertor:
         self.path = systemd_path
         self.name = os.path.split(self.path)[1].split('.')[0]
         self.pidfile = pidfile or "/run/{}.pid".format(self.name)
-        print(self.pidfile)
         self.commands = []
         self.start_pre = []
         self.start_post = []
