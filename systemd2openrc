@@ -121,7 +121,7 @@ class Convertor:
     def output_variables_simple(self):
         yield '\n'
         yield 'COMMAND="{}"\n'.format(self.commands[0])
-        yield 'PIDFILE="/run/{name}-service.pid"\n'
+        yield 'PIDFILE="/run/{}-service.pid"\n'.format(self.name)
         yield 'STARTOPTS="--start --make-pidfile --background --quiet"\n'
         yield 'STOPOPTS="--quiet"\n'
 
