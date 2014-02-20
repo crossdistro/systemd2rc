@@ -37,21 +37,6 @@ HEADER = """\
 # Description: {description}
 """
 
-SRVTYPE = {
-    'simple': """\
-COMMAND="{command}"
-PIDFILE="/run/{name}-service.pid"
-STARTOPTS="--start --make-pidfile --background --quiet"
-STOPOPTS="--quiet"
-""",
-    'forking': """\
-COMMAND="{command}"
-PIDFILE="{pidfile}"
-STARTOPTS=""
-STOPOPTS=""
-""",
-}
-
 MAIN = """\
 start() {{
 {output_start_pre}\
@@ -76,7 +61,7 @@ reload() {{
 }}
 """
 
-AUX = """\
+CMD = """\
         {0} || {{ echo >&2 'Command failed: {0}' exit 1; }}
 """
 
@@ -92,7 +77,7 @@ class Convertor:
         self.name = os.path.split(self.path)[1].split('.')[0]
         self.pidfile = pidfile or "/run/{}.pid".format(self.name)
         print(self.pidfile)
-        self.command = None
+        self.commands = []
         self.start_pre = []
         self.start_post = []
         self.stop_pre = []
@@ -117,22 +102,50 @@ class Convertor:
                     func(value)
 
     def __str__(self):
-        self.output_start_pre = "".join(AUX.format(command) for command in self.start_pre)
-        self.output_start_post = "".join(AUX.format(command) for command in self.start_post)
-        self.output_stop_pre = "".join(AUX.format(command) for command in self.stop_pre)
-        self.output_stop_post = "".join(AUX.format(command) for command in self.stop_post)
+        self.output_start_pre = "".join(CMD.format(command) for command in self.start_pre)
+        self.output_start_post = "".join(CMD.format(command) for command in self.start_post)
+        self.output_stop_pre = "".join(CMD.format(command) for command in self.stop_pre)
+        self.output_stop_post = "".join(CMD.format(command) for command in self.stop_post)
 
         data = vars(self)
 
         output = [HEADER.format(**data)]
         output += ["#\n# Unsupported systemd options:\n"] + ["#     {}.{} = {}\n".format(*item) for item in self.unsupported]
         output += ["#\n# Unsupported dependencies:\n"] + ["#     {} {}\n".format(*item) for item in self.unsupported_deps]
-        output += ["\n"]
-        output += [SRVTYPE[self.service_type].format(**data)]
+        output += getattr(self, "output_variables_{}".format(self.service_type))()
         output += ["\ndepend() {\n"] + ["    {} {}\n".format(*item) for item in self.deps] + ["}\n\n"]
-        output += [MAIN.format(**data)]
+        output += getattr(self, "output_main_{}".format(self.service_type))()
 
         return "".join(output)
+
+    def output_variables_simple(self):
+        yield '\n'
+        yield 'COMMAND="{}"\n'.format(self.commands[0])
+        yield 'PIDFILE="/run/{name}-service.pid"\n'
+        yield 'STARTOPTS="--start --make-pidfile --background --quiet"\n'
+        yield 'STOPOPTS="--quiet"\n'
+
+    def output_variables_forking(self):
+        yield '\n'
+        yield 'COMMAND="{}"\n'.format(self.commands[0])
+        yield 'PIDFILE="{}"\n'.format(self.pidfile)
+        yield 'STARTOPTS=""\n'
+        yield 'STOPOPTS=""\n'
+
+    def output_variables_oneshot(self):
+        return []
+
+    def output_main_simple(self):
+        yield MAIN
+    output_main_forking = output_main_simple
+
+    def output_main_oneshot(self):
+        yield 'start() {\n'
+        for command in self.commands:
+            yield CMD.format(command)
+        yield '}\n\n'
+        yield 'stop() {\n'
+        yield '}\n\n'
 
     def add_dependency(self, how, services):
         for service in services.split():
@@ -165,7 +178,7 @@ class Convertor:
         self.service_type = value
 
     def process_Service_ExecStart(self, value):
-        self.command = value
+        self.commands.append(value)
 
     def process_Service_ExecStartPre(self, value):
         self.start_pre.append(value)
