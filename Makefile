@@ -1,3 +1,3 @@
 all:
 install:
-	install -d systemd2openrc "$(DESTDIR)/usr/bin/systemd2openrc"
+	install -D systemd2openrc "$(DESTDIR)/usr/bin/systemd2openrc"
