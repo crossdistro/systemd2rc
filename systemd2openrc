@@ -56,7 +56,7 @@ MAIN = """\
 start() {{
 {output_start_pre}\
         ebegin "Starting $SVCNAME"
-        start-stop-daemon --start $STARTOPTS --pidfile "$PIDFILE" --exec $COMMAND
+        start-stop-daemon --start $STARTOPTS --pidfile "$PIDFILE" -- $COMMAND
         eend $?
 {output_start_post}\
 }}
@@ -85,12 +85,13 @@ TRANSFORM_SERVICE = {
 }
 
 class Convertor:
-    def __init__(self, systemd_path):
+    def __init__(self, systemd_path, pidfile=None):
         self.description = ""
         self.deps = []
         self.path = systemd_path
         self.name = os.path.split(self.path)[1].split('.')[0]
-        self.pidfile = "/run/{}.pid".format(self.name)
+        self.pidfile = pidfile or "/run/{}.pid".format(self.name)
+        print(self.pidfile)
         self.command = None
         self.start_pre = []
         self.start_post = []
@@ -179,4 +180,11 @@ class Convertor:
         self.stop_post.append(value)
 
 if __name__ == '__main__':
-    sys.stdout.write(str(Convertor(sys.argv[1])))
+    pidfile = None
+
+    sys.argv.pop(0)
+    if sys.argv and sys.argv[0] == '--pidfile':
+        sys.argv.pop(0)
+        pidfile = sys.argv.pop(0)
+
+    sys.stdout.write(str(Convertor(sys.argv[0], pidfile)))
