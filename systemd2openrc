@@ -112,7 +112,8 @@ class Convertor:
         output += ["#\n# Unsupported systemd options:\n"] + ["#     {}.{} = {}\n".format(*item) for item in self.unsupported]
         output += ["#\n# Unsupported dependencies:\n"] + ["#     {} {}\n".format(*item) for item in self.unsupported_deps]
         output += getattr(self, "output_variables_{}".format(self.service_type))()
-        output += ["\ndepend() {\n"] + ["    {} {}\n".format(*item) for item in self.deps] + ["}\n\n"]
+        if self.deps:
+            output += ["\ndepend() {\n"] + ["    {} {}\n".format(*item) for item in self.deps] + ["}\n\n"]
         output += getattr(self, "output_main_{}".format(self.service_type))()
 
         return "".join(output)
@@ -139,12 +140,14 @@ class Convertor:
     output_main_forking = output_main_simple
 
     def output_main_oneshot(self):
-        yield 'start() {\n'
-        for command in self.commands:
-            yield CMD.format(command)
-        yield '}\n\n'
-        yield 'stop() {\n'
-        yield '}\n\n'
+        if self.commands:
+            yield '\nstart() {\n'
+            for command in self.commands:
+                yield CMD.format(command)
+            yield '}\n'
+        if False:
+            yield '\nstop() {\n'
+            yield '}\n'
 
     def add_dependency(self, how, services):
         for service in services.split():
