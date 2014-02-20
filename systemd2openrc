@@ -62,7 +62,7 @@ reload() {{
 """
 
 CMD = """\
-        {0} || {{ echo >&2 'Command failed: {0}' exit 1; }}
+        {0} || {{ echo >&2 'Command failed: {0}'; exit 1; }}
 """
 
 TRANSFORM_SERVICE = {
