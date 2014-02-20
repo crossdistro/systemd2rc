@@ -135,7 +135,7 @@ class Convertor:
         return []
 
     def output_main_simple(self):
-        yield MAIN
+        yield MAIN.format(**vars(self))
     output_main_forking = output_main_simple
 
     def output_main_oneshot(self):
