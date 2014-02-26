@@ -40,29 +40,29 @@ HEADER = """\
 MAIN = """\
 start() {{
 {output_start_pre}\
-        ebegin "Starting $SVCNAME"
-        start-stop-daemon --start $STARTOPTS --pidfile "$PIDFILE" -- $COMMAND
-        eend $?
+    ebegin "Starting $SVCNAME"
+    start-stop-daemon --start $STARTOPTS --pidfile "$PIDFILE" -- $COMMAND
+    eend $?
 {output_start_post}\
 }}
 
 stop() {{
 {output_stop_pre}\
-        ebegin "Stopping $SVCNAME"
-        start-stop-daemon --stop $STOPOPTS --pidfile "$PIDFILE"
-        eend $?
+    ebegin "Stopping $SVCNAME"
+    start-stop-daemon --stop $STOPOPTS --pidfile "$PIDFILE"
+    eend $?
 {output_stop_post}\
 }}
 
 reload() {{
-        ebegin "Reloading $SVCNAME"
-        start-stop-daemon --signal HUP --pidfile "$PIDFILE"
-        eend $?
+    ebegin "Reloading $SVCNAME"
+    start-stop-daemon --signal HUP --pidfile "$PIDFILE"
+    eend $?
 }}
 """
 
 CMD = """\
-        {0} || {{ echo >&2 'Command failed: {0}'; exit 1; }}
+    {0} || {{ echo >&2 'Command failed: {0}'; exit 1; }}
 """
 
 TRANSFORM_SERVICE = {
@@ -101,10 +101,10 @@ class Convertor:
                     func(value)
 
     def __str__(self):
-        self.output_start_pre = "".join(CMD.format(command) for command in self.start_pre)
-        self.output_start_post = "".join(CMD.format(command) for command in self.start_post)
-        self.output_stop_pre = "".join(CMD.format(command) for command in self.stop_pre)
-        self.output_stop_post = "".join(CMD.format(command) for command in self.stop_post)
+        self.output_start_pre = "".join(self.make_command(command) for command in self.start_pre)
+        self.output_start_post = "".join(self.make_command(command) for command in self.start_post)
+        self.output_stop_pre = "".join(self.make_command(command) for command in self.stop_pre)
+        self.output_stop_post = "".join(self.make_command(command) for command in self.stop_post)
 
         data = vars(self)
 
@@ -117,6 +117,12 @@ class Convertor:
         output += getattr(self, "output_main_{}".format(self.service_type))()
 
         return "".join(output)
+
+    def make_command(self, command):
+        if command.startswith('-'):
+            return "    {}\n".format(command[1:])
+        else:
+            return CMD.format(command)
 
     def output_variables_simple(self):
         yield '\n'
@@ -143,7 +149,7 @@ class Convertor:
         if self.commands:
             yield '\nstart() {\n'
             for command in self.commands:
-                yield CMD.format(command)
+                yield self.make_command(command)
             yield '}\n'
         if False:
             yield '\nstop() {\n'
