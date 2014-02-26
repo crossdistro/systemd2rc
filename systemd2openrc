@@ -93,7 +93,7 @@ class Convertor:
                 if line.startswith('['):
                     section = line.strip('[] \t\r\n')
                 elif '=' in line:
-                    option, value = (s.strip() for s in line.split('=', 2))
+                    option, value = (s.strip() for s in line.split('=', 1))
                     try:
                         func = getattr(self, "process_{}_{}".format(section, option))
                     except AttributeError:
