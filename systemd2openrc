@@ -39,30 +39,30 @@ HEADER = """\
 
 MAIN = """\
 start() {{
-{output_start_pre}\
     ebegin "Starting $SVCNAME"
-    start-stop-daemon --start $STARTOPTS --pidfile "$PIDFILE" -- $COMMAND
-    eend $?
+{output_start_pre}\
+    start-stop-daemon --start $STARTOPTS --pidfile "$PIDFILE" -- $COMMAND || error
 {output_start_post}\
+    eend 0
 }}
 
 stop() {{
-{output_stop_pre}\
     ebegin "Stopping $SVCNAME"
+{output_stop_pre}\
     start-stop-daemon --stop $STOPOPTS --pidfile "$PIDFILE"
-    eend $?
 {output_stop_post}\
+    eend 0
 }}
 
 reload() {{
     ebegin "Reloading $SVCNAME"
-    start-stop-daemon --signal HUP --pidfile "$PIDFILE"
-    eend $?
+    start-stop-daemon --signal HUP --pidfile "$PIDFILE" || error
 }}
-"""
 
-CMD = """\
-    {0} || {{ echo >&2 'Command failed: {0}'; exit 1; }}
+error() {{
+    eend 1
+    exit 1
+}}
 """
 
 TRANSFORM_SERVICE = {
@@ -122,7 +122,7 @@ class Convertor:
         if command.startswith('-'):
             return "    {}\n".format(command[1:])
         else:
-            return CMD.format(command)
+            return "    {} || error\n".format(command)
 
     def output_variables_simple(self):
         yield '\n'
@@ -147,10 +147,10 @@ class Convertor:
 
     def output_main_oneshot(self):
         if self.commands:
-            yield '\nstart() {\n'
+            yield '\nstart() {\n    ebegin "Starting $SVCNAME"\n'
             for command in self.commands:
                 yield self.make_command(command)
-            yield '}\n'
+            yield '    eend 0\n}\n'
         if False:
             yield '\nstop() {\n'
             yield '}\n'
