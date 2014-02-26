@@ -171,7 +171,7 @@ class Convertor:
         self.add_dependency("after", value)
 
     def process_Unit_Wants(self, value):
-        self.add_dependency("use", value)
+        self.add_dependency("need", value)
 
     def process_Unit_Requires(self, value):
         self.add_dependency("need", value)
