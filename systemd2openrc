@@ -57,6 +57,7 @@ stop() {{
 reload() {{
     ebegin "Reloading $SVCNAME"
     start-stop-daemon --signal HUP --pidfile "$PIDFILE" || error
+    eend 0
 }}
 
 error() {{
