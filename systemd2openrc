@@ -71,7 +71,7 @@ TRANSFORM_SERVICE = {
 }
 
 class Convertor:
-    def __init__(self, path, pidfile=None):
+    def __init__(self, path, pidfile=None, **options):
         self.description = ""
         self.deps = []
         self.path = path
@@ -85,6 +85,7 @@ class Convertor:
         self.unsupported = []
         self.unsupported_deps = []
         self.service_type = "simple"
+        self.options = options
 
         section = None
 
@@ -113,8 +114,9 @@ class Convertor:
         output += ["#\n# Unsupported systemd options:\n"] + ["#     {}.{} = {}\n".format(*item) for item in self.unsupported]
         output += ["#\n# Unsupported dependencies:\n"] + ["#     {} {}\n".format(*item) for item in self.unsupported_deps]
         output += getattr(self, "output_variables_{}".format(self.service_type))()
-        if self.deps:
-            output += ["\ndepend() {\n"] + ["    {} {}\n".format(*item) for item in self.deps] + ["}\n\n"]
+        if self.deps and not 'nodeps' in self.options:
+            output += ["\ndepend() {\n"] + ["    {} {}\n".format(*item) for item in self.deps] + ["}\n"]
+        output += ['\n']
         output += getattr(self, "output_main_{}".format(self.service_type))()
 
         return "".join(output)
@@ -209,11 +211,13 @@ def read_kargs(argv):
     kargs = {}
     sys.argv.pop(0)
     while sys.argv:
-        if sys.argv[0] == '--pidfile':
-            sys.argv.pop(0)
+        arg = sys.argv.pop(0)
+        if arg == '--pidfile':
             kargs['pidfile'] = sys.argv.pop(0)
+        elif arg.startswith('--'):
+            kargs[arg[2:]] = True
         else:
-            kargs['path'] = sys.argv.pop(0)
+            kargs['path'] = arg
     return kargs
 
 if __name__ == '__main__':
