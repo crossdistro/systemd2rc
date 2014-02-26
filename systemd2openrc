@@ -61,6 +61,7 @@ reload() {{
 }}
 
 error() {{
+    start-stop-daemon --signal KILL --pidfile "$PIDFILE"
     eend 1
     exit 1
 }}
