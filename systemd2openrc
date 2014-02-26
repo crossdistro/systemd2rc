@@ -70,10 +70,10 @@ TRANSFORM_SERVICE = {
 }
 
 class Convertor:
-    def __init__(self, systemd_path, pidfile=None):
+    def __init__(self, path, pidfile=None):
         self.description = ""
         self.deps = []
-        self.path = systemd_path
+        self.path = path
         self.name = os.path.split(self.path)[1].split('.')[0]
         self.pidfile = pidfile or "/run/{}.pid".format(self.name)
         self.commands = []
@@ -121,7 +121,7 @@ class Convertor:
     def output_variables_simple(self):
         yield '\n'
         yield 'COMMAND="{}"\n'.format(self.commands[0])
-        yield 'PIDFILE="/run/{}-service.pid"\n'.format(self.name)
+        yield 'PIDFILE="{}"\n'.format(self.pidfile)
         yield 'STARTOPTS="--start --make-pidfile --background --quiet"\n'
         yield 'STOPOPTS="--quiet"\n'
 
@@ -194,12 +194,16 @@ class Convertor:
     def process_Service_ExecStopPost(self, value):
         self.stop_post.append(value)
 
-if __name__ == '__main__':
-    pidfile = None
-
+def read_kargs(argv):
+    kargs = {}
     sys.argv.pop(0)
-    if sys.argv and sys.argv[0] == '--pidfile':
-        sys.argv.pop(0)
-        pidfile = sys.argv.pop(0)
+    while sys.argv:
+        if sys.argv[0] == '--pidfile':
+            sys.argv.pop(0)
+            kargs['pidfile'] = sys.argv.pop(0)
+        else:
+            kargs['path'] = sys.argv.pop(0)
+    return kargs
 
-    sys.stdout.write(str(Convertor(sys.argv[0], pidfile)))
+if __name__ == '__main__':
+    sys.stdout.write(str(Convertor(**read_kargs(sys.argv))))
