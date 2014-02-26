@@ -155,6 +155,10 @@ class Convertor:
             yield '\nstop() {\n'
             yield '}\n'
 
+    # Treat dbus services as simple
+    output_variables_dbus = output_variables_simple
+    output_main_dbus = output_main_simple
+
     def add_dependency(self, how, services):
         for service in services.split():
             try:
