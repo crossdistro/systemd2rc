@@ -339,7 +339,11 @@ class InitScript:
         return ''.join(iter(self))
 
     def __iter__(self):
-        for part in "shebang", "generator_header", "header", "dependencies", "actions", "footer":
+        parts = ["shebang", "generator_header", "header"]
+        if "nodeps" not in self.options:
+            parts.append("dependencies")
+        parts += ["actions", "footer"]
+        for part in parts:
             yield from self.__do_part(part)
 
         unprocessed = sum([[(section.name, option) for option in section.unprocessed] for section in sorted(self.unit)], [])
@@ -516,6 +520,8 @@ if __name__ == '__main__':
             cls = candidates_by_option[arg]
         elif arg == '--pidfile':
             options["pidfile"] = sys.argv.pop(0)
+        elif arg == '--nodeps':
+            options["nodeps"] = True
         elif not path and not arg.startswith('-'):
             path = arg
         else:
