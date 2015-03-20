@@ -5,7 +5,7 @@ distributions.
 
 ## Goals
 
- * Fully automatic conversion of simple scripts
+ * Fully automatic conversion of simple unit files
  * Dependency overrides
  * Advanced configuration
 
